@@ -1,8 +1,6 @@
 version: 1.0
-runtime: python3.11
+runtime: custom
 source:
   build:
     runtime: custom
     dockerfilePath: Dockerfile
-run:
-  command: python app
