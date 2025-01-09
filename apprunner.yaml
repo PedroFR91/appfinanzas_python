@@ -1,6 +1,7 @@
 version: 1.0
-runtime: custom
-source:
-  build:
-    runtime: custom
-    dockerfilePath: Dockerfile
+runtime: python311
+build:
+  commands:
+    - pip3 install -r requirements.txt
+run:
+  command: python3 app.py
