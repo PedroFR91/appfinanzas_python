@@ -1,9 +1,9 @@
 version: 1.0
-runtime: python311
+runtime: python3
 build:
-  phases:
-    install:
-      commands:
-        - pip3 install -r requirements.txt
+  commands:
+    build:
+      - pip install pipenv
+      - pipenv install
 run:
-  command: python3 app.py
+  command: python app.py
