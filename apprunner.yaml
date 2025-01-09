@@ -5,6 +5,7 @@ build:
     pre-build:
       - echo "Starting pre-build phase..."
     build:
+      - pip3 install --upgrade pip
       - pip3 install -r requirements.txt
     post-build:
       - echo "Build phase completed."
@@ -12,4 +13,5 @@ run:
   runtime-version: 3.11
   pre-run:
     - echo "Running pre-run tasks..."
+    - pip3 install -r requirements.txt
   command: python3 app.py
