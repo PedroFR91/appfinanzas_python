@@ -161,6 +161,8 @@ def upload_file():
         session_performance = analyze_session_performance(df_cleaned)
         asset_ranking = analyze_assets(df_cleaned)
 
+        # Generar las entradas individuales
+        entries = df_cleaned.to_dict(orient='records')
         # Formatear la salida en JSON
         output = {
             "metrics": metrics,
@@ -173,7 +175,8 @@ def upload_file():
             "day_performance": day_performance,
             "hour_performance": hour_performance,
             "session_performance": session_performance,
-            "asset_ranking": asset_ranking
+            "asset_ranking": asset_ranking,
+             "entries": entries
         }
 
         return jsonify(convert_to_serializable(output)), 200
