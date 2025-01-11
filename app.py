@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import json
 import datetime  # Importar el módulo datetime
+import requests
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -163,6 +164,16 @@ def upload_file():
 
         # Generar las entradas individuales
         entries = df_cleaned.to_dict(orient='records')
+
+        # Enviar las `entries` al backend general
+        try:
+            backend_url = "https://wqpxtxrkme.eu-west-2.awsapprunner.com/data"
+            response = requests.post(backend_url, json={"entries": entries})
+            if response.status_code != 201:
+                print(f"Error al subir entries: {response.text}")
+        except Exception as e:
+            print(f"Error al enviar entries al backend general: {str(e)}")
+
         # Formatear la salida en JSON
         output = {
             "metrics": metrics,
@@ -175,13 +186,11 @@ def upload_file():
             "day_performance": day_performance,
             "hour_performance": hour_performance,
             "session_performance": session_performance,
-            "asset_ranking": asset_ranking,
-            "entries": entries  # Agregar las entradas individuales
+            "asset_ranking": asset_ranking
         }
 
         return jsonify(convert_to_serializable(output)), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
