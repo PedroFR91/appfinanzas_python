@@ -168,7 +168,11 @@ def upload_file():
         # Enviar las `entries` al backend general
         try:
             backend_url = "https://wqpxtxrkme.eu-west-2.awsapprunner.com/data"
+            print(f"Enviando entradas al backend: {backend_url}")
+            print(f"Entradas a enviar: {json.dumps({'entries': entries}, indent=2)}")
             response = requests.post(backend_url, json={"entries": entries})
+            print(f"Respuesta del backend: {response.status_code}")
+            print(f"Contenido de la respuesta: {response.text}")
             if response.status_code != 201:
                 print(f"Error al subir entries: {response.text}")
         except Exception as e:
