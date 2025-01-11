@@ -3,10 +3,10 @@ from flask_cors import CORS
 import pandas as pd
 import numpy as np
 import json
+import datetime  # Importar el módulo datetime
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-
 
 # Filtrar datos válidos con 'DATE' y '%P&L' no nulos
 def clean_data(df):
@@ -37,6 +37,7 @@ def calculate_metrics(df):
         "positive_pnl": round(positive_pnl, 2),
         "negative_pnl": round(negative_pnl, 2),
     }
+
 def calculate_charts_data(df):
     # Calcular el P&L acumulado
     df_sorted = df.sort_values('DATE')
@@ -115,6 +116,8 @@ def analyze_assets(df):
 def convert_to_serializable(data):
     if isinstance(data, pd.Timestamp):
         return data.strftime('%Y-%m-%d')
+    elif isinstance(data, datetime.time):  # Manejar objetos time
+        return data.strftime('%H:%M:%S')
     elif isinstance(data, (np.integer, int)):
         return int(data)
     elif isinstance(data, (np.floating, float)):
@@ -131,23 +134,20 @@ def convert_to_serializable(data):
 @app.route("/")
 def home():
     return jsonify({"message": "Bienvenido a la API de Finanzas"}), 200
+
 # Endpoint para procesar archivo Excel
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    # Verificar si se incluye el archivo en la solicitud
     if 'file' not in request.files:
-        print("Archivo no encontrado en request.files")
         return jsonify({'error': 'No se encontró el archivo'}), 400
 
     file = request.files['file']
     if file.filename == '':
-        print("El nombre del archivo está vacío")
         return jsonify({'error': 'El archivo está vacío'}), 400
 
     try:
         # Leer el archivo Excel en un DataFrame
         df = pd.read_excel(file)
-        print(f"Archivo recibido: {file.filename}")
 
         # Procesar el DataFrame
         df_cleaned = clean_data(df)
@@ -176,14 +176,12 @@ def upload_file():
             "hour_performance": hour_performance,
             "session_performance": session_performance,
             "asset_ranking": asset_ranking,
-             "entries": entries
+            "entries": entries  # Agregar las entradas individuales
         }
 
         return jsonify(convert_to_serializable(output)), 200
     except Exception as e:
-        print(f"Error al procesar el archivo: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
-
