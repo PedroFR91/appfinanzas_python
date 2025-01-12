@@ -147,7 +147,7 @@ def upload_file():
         return jsonify({'error': 'Archivo o userId no proporcionado'}), 400
 
     file = request.files['file']
-    user_id = request.form.get('userId')  # Obtener el userId del formulario
+    user_id = request.form.get('userId')
 
     if not user_id:
         return jsonify({'error': 'userId es obligatorio'}), 400
@@ -162,12 +162,12 @@ def upload_file():
         # Procesar el DataFrame
         df_cleaned = clean_data(df)
 
-        # Generar las entradas individuales
+        # Generar las entradas individuales y convertir los datos
         entries = df_cleaned.to_dict(orient='records')
         entries = [
             {
-                "userId": user_id,  # Añadir el userId a cada entrada
-                "date": row['DATE'],
+                "userId": user_id,
+                "date": row['DATE'].strftime('%Y-%m-%d') if pd.notna(row['DATE']) else None,
                 "day": row['DAY'],
                 "open": row['OPEN'],
                 "close": row['CLOSE'],
@@ -182,15 +182,13 @@ def upload_file():
                 "risk": row.get('RISK'),
                 "temporalidad": row.get('TEMPORALIDAD'),
             }
-            for _, row in df_cleaned.iterrows()
+            for row in entries
         ]
 
         # Enviar las `entries` al backend general
         try:
             backend_url = "https://wqpxtxrkme.eu-west-2.awsapprunner.com/data"
-            print(f"Enviando entradas al backend: {backend_url}")
             response = requests.post(backend_url, json={"entries": entries})
-            print(f"Respuesta del backend: {response.status_code}")
             if response.status_code != 201:
                 return jsonify({'error': 'Error al guardar los datos', 'details': response.text}), 500
         except Exception as e:
