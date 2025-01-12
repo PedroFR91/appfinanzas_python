@@ -12,10 +12,12 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # Filtrar datos válidos con 'DATE' y '%P&L' no nulos
 def clean_data(df):
     df_cleaned = df.dropna(subset=['DATE', '%P&L'])
-    df_cleaned['DATE'] = pd.to_datetime(df_cleaned['DATE'], format='%Y-%m-%d', errors='coerce')
-    df_cleaned['%P&L'] = pd.to_numeric(df_cleaned['%P&L'], errors='coerce') / 100
-    df_cleaned['$P&L'] = pd.to_numeric(df_cleaned['$P&L'], errors='coerce')
-    df_cleaned['AC PROFIT'] = pd.to_numeric(df_cleaned['AC PROFIT'], errors='coerce')
+    df_cleaned = df_cleaned.copy()
+    df_cleaned.loc[:, 'DATE'] = pd.to_datetime(df_cleaned['DATE'], format='%Y-%m-%d', errors='coerce')
+    df_cleaned.loc[:, '%P&L'] = pd.to_numeric(df_cleaned['%P&L'], errors='coerce') / 100
+    df_cleaned.loc[:, '$P&L'] = pd.to_numeric(df_cleaned['$P&L'], errors='coerce')
+    df_cleaned.loc[:, 'AC PROFIT'] = pd.to_numeric(df_cleaned['AC PROFIT'], errors='coerce')
+
     return df_cleaned
 
 # Calcular métricas clave
@@ -86,7 +88,9 @@ def analyze_day_performance(df):
     return day_metrics.reset_index().to_dict(orient='records')
 
 def analyze_hour_performance(df):
-    df['HOUR'] = pd.to_datetime(df['OPEN'], format='%H:%M:%S', errors='coerce').dt.hour
+    df = df.copy()
+    df.loc[:, 'HOUR'] = pd.to_datetime(df['OPEN'], format='%H:%M:%S', errors='coerce').dt.hour
+
     hour_metrics = df.groupby('HOUR').agg(
         total_pnl=pd.NamedAgg(column='$P&L', aggfunc='sum'),
         total_operations=pd.NamedAgg(column='HOUR', aggfunc='count'),
