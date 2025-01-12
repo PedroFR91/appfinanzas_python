@@ -169,8 +169,8 @@ def upload_file():
                 "userId": user_id,
                 "date": row['DATE'].strftime('%Y-%m-%d') if pd.notna(row['DATE']) else None,
                 "day": row['DAY'],
-                "open": row['OPEN'],
-                "close": row['CLOSE'],
+                "open": row['OPEN'].strftime('%H:%M:%S') if isinstance(row['OPEN'], datetime.time) else row['OPEN'],
+                "close": row['CLOSE'].strftime('%H:%M:%S') if isinstance(row['CLOSE'], datetime.time) else row['CLOSE'],
                 "asset": row['ASSET'],
                 "session": row.get('SESSION'),
                 "buySell": row.get('BUY_SELL'),
@@ -197,6 +197,7 @@ def upload_file():
         return jsonify({"message": "Datos procesados correctamente"}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
