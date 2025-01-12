@@ -143,10 +143,15 @@ def home():
 # Endpoint para procesar archivo Excel
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No se encontró el archivo'}), 400
+    if 'file' not in request.files or 'userId' not in request.form:
+        return jsonify({'error': 'Archivo o userId no proporcionado'}), 400
 
     file = request.files['file']
+    user_id = request.form.get('userId')  # Obtener el userId del formulario
+
+    if not user_id:
+        return jsonify({'error': 'userId es obligatorio'}), 400
+
     if file.filename == '':
         return jsonify({'error': 'El archivo está vacío'}), 400
 
@@ -156,49 +161,44 @@ def upload_file():
 
         # Procesar el DataFrame
         df_cleaned = clean_data(df)
-        metrics = calculate_metrics(df_cleaned)
-        charts_data = calculate_charts_data(df_cleaned)
-        tp_streak, tp_start, tp_end, tp_pnl = analyze_streaks(df_cleaned, 'TP')
-        sl_streak, sl_start, sl_end, sl_pnl = analyze_streaks(df_cleaned, 'SL')
-        be_streak, be_start, be_end, be_pnl = analyze_streaks(df_cleaned, 'BE')
-        day_performance = analyze_day_performance(df_cleaned)
-        hour_performance = analyze_hour_performance(df_cleaned)
-        session_performance = analyze_session_performance(df_cleaned)
-        asset_ranking = analyze_assets(df_cleaned)
 
         # Generar las entradas individuales
         entries = df_cleaned.to_dict(orient='records')
+        entries = [
+            {
+                "userId": user_id,  # Añadir el userId a cada entrada
+                "date": row['DATE'],
+                "day": row['DAY'],
+                "open": row['OPEN'],
+                "close": row['CLOSE'],
+                "asset": row['ASSET'],
+                "session": row.get('SESSION'),
+                "buySell": row.get('BUY_SELL'),
+                "lots": row.get('LOTS'),
+                "tpSlBe": row.get('TP/SL'),
+                "pnl": row.get('$P&L'),
+                "pnlPercentage": row.get('%P&L'),
+                "ratio": row.get('RATIO'),
+                "risk": row.get('RISK'),
+                "temporalidad": row.get('TEMPORALIDAD'),
+            }
+            for _, row in df_cleaned.iterrows()
+        ]
 
         # Enviar las `entries` al backend general
         try:
             backend_url = "https://wqpxtxrkme.eu-west-2.awsapprunner.com/data"
             print(f"Enviando entradas al backend: {backend_url}")
-            print(f"Entradas a enviar: {json.dumps({'entries': entries}, indent=2)}")
             response = requests.post(backend_url, json={"entries": entries})
             print(f"Respuesta del backend: {response.status_code}")
-            print(f"Contenido de la respuesta: {response.text}")
             if response.status_code != 201:
-                print(f"Error al subir entries: {response.text}")
+                return jsonify({'error': 'Error al guardar los datos', 'details': response.text}), 500
         except Exception as e:
-            print(f"Error al enviar entries al backend general: {str(e)}")
+            return jsonify({'error': 'Error al enviar datos al backend', 'details': str(e)}), 500
 
-        # Formatear la salida en JSON
-        output = {
-            "metrics": metrics,
-            "charts_data": charts_data,
-            "streaks": {
-                "tp": {"streak": tp_streak, "start_date": tp_start, "end_date": tp_end, "pnl": tp_pnl},
-                "sl": {"streak": sl_streak, "start_date": sl_start, "end_date": sl_end, "pnl": sl_pnl},
-                "be": {"streak": be_streak, "start_date": be_start, "end_date": be_end, "pnl": be_pnl}
-            },
-            "day_performance": day_performance,
-            "hour_performance": hour_performance,
-            "session_performance": session_performance,
-            "asset_ranking": asset_ranking
-        }
-
-        return jsonify(convert_to_serializable(output)), 200
+        return jsonify({"message": "Datos procesados correctamente"}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
